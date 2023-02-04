@@ -90,7 +90,7 @@ d = layer_info.values[:, 1].astype(float)  # stack thickness data
 n0 = 1  # n0
 theta = deg_to_rad(0)  # incident angle
 
-# function ____________________________________________________________________
+# analysis ____________________________________________________________________
 m = f_matrix(1, n1, n0, theta, pol)  # hitting the stack
 
 n = [n1, n2]
@@ -103,5 +103,4 @@ for i in tqdm(range(len(d))):
 
     ind = not ind
 
-# plt.xkcd()
 plt.plot(wl, abs(m[:, 1, 0] / m[:, 0, 0]) ** 2)
