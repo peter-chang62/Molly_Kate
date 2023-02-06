@@ -97,10 +97,16 @@ n = [n1, n2]
 ind = 0
 for i in tqdm(range(len(d))):
     p = p_matrix(n[ind], n0, d[i], theta, wl)  # propagate through layer
-    f = f_matrix(n[ind], n[not ind], n0, theta, pol)  # enter next layer
+    if i == len(d) - 1:
+        f = f_matrix(n[ind], 1.48, n0, theta, pol)  # enter last layer
+    else:
+        f = f_matrix(n[ind], n[not ind], n0, theta, pol)  # enter next layer
     m = p @ m
     m = f @ m
 
     ind = not ind
 
-plt.plot(wl, abs(m[:, 1, 0] / m[:, 0, 0]) ** 2)
+R = abs(m[:, 1, 0] / m[:, 0, 0]) ** 2
+plt.plot(wl, R, '.')
+plt.xlim(350, 950)
+plt.ylim(.925, .95)
