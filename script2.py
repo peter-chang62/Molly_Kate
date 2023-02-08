@@ -69,7 +69,7 @@ def f_matrix(n1, n2, n0, theta, pol):
         return mat
 
 
-# __________________ loading index of refraction and stack data _______________
+# %% loading index of refraction and stack data 
 layer_info = pd.read_excel("NEID_mirrors.xlsx", sheet_name="Layer Info")
 SiO2 = pd.read_excel("NEID_mirrors.xlsx", sheet_name="SiO2")
 Nb2O5 = pd.read_excel("NEID_mirrors.xlsx", sheet_name="Nb2O5")
@@ -92,7 +92,7 @@ n0 = 1  # n0
 theta = deg_to_rad(0)  # incident angle
 L = 7.498 * (10 ** 6) # spacer length
 
-# analysis ____________________________________________________________________
+# %% analysis
 m = f_matrix(1, n1, n0, theta, pol)  # hitting the stack
 
 n = [n1, n2]
@@ -113,23 +113,38 @@ R = abs(m[:, 1, 0] / m[:, 0, 0]) ** 2
 #plt.xlim(350, 950)
 #plt.ylim(.925, .95)
 
-def phase_calculation(ed, en, er):
+# %%
+def phase_calculation(ed, en, er, n_stack):
     d1 = d + ed[:] + er[:]
-    n1test = n + en
+    # n1test = n + en
+    
+    if n_stack.shape[0] == 2:
+        n = np.zeros((len(d1), n_stack.shape[1]))
+        n[::2] = n_stack[0]
+        n[1::2] = n_stack[1]
 
     m = f_matrix(1, n1, n0, theta, pol)  # hitting the stack
 
-    ind = 0
+    # ind = 0
+    # for i in tqdm(range(len(d1))):
+    #     p = p_matrix(n[ind], n0, d1[i], theta, wl)  # propagate through layer
+    #     if i == len(d1) - 1:
+    #         f = f_matrix(n[ind], 1.48, n0, theta, pol)  # enter last layer
+    #     else:
+    #         f = f_matrix(n[ind], n[not ind], n0, theta, pol)  # enter next layer
+    #     m = p @ m
+    #     m = f @ m
+
+    #     ind = not ind
+        
     for i in tqdm(range(len(d1))):
-        p = p_matrix(n[ind], n0, d1[i], theta, wl)  # propagate through layer
+        p = p_matrix(n[i], n0, d1[i], theta, wl)  # propagate through layer
         if i == len(d1) - 1:
-            f = f_matrix(n[ind], 1.48, n0, theta, pol)  # enter last layer
+            f = f_matrix(n[i], 1.48, n0, theta, pol)  # enter last layer
         else:
-            f = f_matrix(n[ind], n[not ind], n0, theta, pol)  # enter next layer
+            f = f_matrix(n[i], n[i + 1], n0, theta, pol)  # enter next layer
         m = p @ m
         m = f @ m
-
-        ind = not ind
 
     r = m[:, 1, 0] / m[:, 0, 0]
     phasewrapped = np.arctan(r.imag / r.real)
@@ -155,18 +170,18 @@ def phase_calculation(ed, en, er):
 def layer_relaxation(dchange, nchange, loc):
     nochange_d = np.zeros((len(d)))
     nochange_n = np.zeros((2, len(n[0])))
-    original_modes = phase_calculation(nochange_d, nochange_n, nochange_d)
+    original_modes = phase_calculation(nochange_d, nochange_n, nochange_d, np.array([n1, n2]))
 
     change_d = np.zeros((len(d)))
     change_d[loc - 1] = dchange
 
-    new_modes = phase_calculation(change_d, nochange_n, nochange_d)
+    new_modes = phase_calculation(change_d, nochange_n, nochange_d, np.array([n1, n2]))
 
     if len(original_modes[0]) == len(new_modes[0]):
         mode_shift = [original_modes[1], new_modes[1] - original_modes[1]]
     else:
         mode_shift = 0
-
+    
     while original_modes[0][0] != new_modes[0][0]:
          if new_modes[0][0] < original_modes[0][0]:
             original_modes = original_modes[:][1:]
